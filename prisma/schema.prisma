@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String?
+  createdAt DateTime @default(now())
+
+  incidents Incident[]
+  location  UserLocation?
+}
+
+model Incident {
+  id          Int      @id @default(autoincrement())
+  lat         Float
+  lng         Float
+  category    String
+  description String?
+  timestamp   DateTime
+  createdAt   DateTime @default(now())
+  
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
+}
+
+model UserLocation {
+  id          String   @id // Client-generated session ID
+  lat         Float
+  lng         Float
+  lastUpdated DateTime @default(now())
+  
+  userId      String?  @unique
+  user        User?    @relation(fields: [userId], references: [id])
+
+  @@index([lastUpdated])
+}
