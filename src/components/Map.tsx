@@ -1,40 +1,17 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMapEvents, Circle } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { Incident } from '@prisma/client';
 
-// Fix for default marker icon
-const icon = L.icon({
-    iconUrl: '/marker-icon.png',
-    iconRetinaUrl: '/marker-icon-2x.png',
-    shadowUrl: '/marker-shadow.png', // We'll need to provide these or use DivIcon
-    iconSize: [25, 41],
-    iconAnchor: [12, 41],
-});
-
-// Or better, use DivIcon with Lucide
-const createDivIcon = (category: string) => {
-    let color = 'bg-red-500';
-    if (category === 'Lighting') color = 'bg-amber-500';
-
-    // Clean HTML string for specific marker
-    // simpler to just use standard circle markers for heatmap feel
-    return L.divIcon({
-        className: 'custom-marker',
-        html: `<div style="background-color: var(--primary); width: 12px; height: 12px; border-radius: 50%; border: 2px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-        iconSize: [12, 12]
-    });
-};
-
-
 interface MapProps {
     incidents: Incident[];
     userLocation?: { lat: number, lng: number } | null;
-    nearbyUsers?: { id: string, lat: number, lng: number }[];
+    nearbyUsers?: { id: string, lat: number, lng: number, isHelpRequested?: boolean }[];
     onMapClick?: (lat: number, lng: number) => void;
+    onOfferHelp?: (targetUserId: string) => void;
 }
 
 function MapEvents({ onMapClick }: { onMapClick?: (lat: number, lng: number) => void }) {
@@ -68,8 +45,15 @@ const nearbyIcon = L.divIcon({
     iconAnchor: [6, 6]
 });
 
+const helpRequestedIcon = L.divIcon({
+    className: 'help-marker',
+    html: `<div style="background-color: #ef4444; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.5); animation: pulse 1s infinite;"></div>`,
+    iconSize: [20, 20],
+    iconAnchor: [10, 10]
+});
 
-export default function SafetyMap({ incidents, userLocation, nearbyUsers = [], onMapClick }: MapProps) {
+
+export default function SafetyMap({ incidents, userLocation, nearbyUsers = [], onMapClick, onOfferHelp }: MapProps) {
     // Default to a central city location (e.g., Delhi/Mumbai or neutral)
     const [position, setPosition] = useState<[number, number]>([28.6139, 77.2090]);
 
@@ -84,27 +68,39 @@ export default function SafetyMap({ incidents, userLocation, nearbyUsers = [], o
         });
     }, []);
 
-    // Default zoom
-    const ZOOM_LEVEL = 15;
+    const ZOOM_LEVEL = 18;
 
-    // Fly to user location on first fix or update
     function UserLocationUpdater({ location }: { location?: { lat: number, lng: number } | null }) {
-        const map = useMapEvents({});
+        const map = useMapEvents({
+            dragstart: () => setTracking(false),
+            zoomstart: () => { }
+        });
+
+        const prevLoc = useRef<{ lat: number, lng: number } | null>(null);
 
         useEffect(() => {
-            if (location) {
-                map.flyTo([location.lat, location.lng], ZOOM_LEVEL, {
-                    animate: true,
-                    duration: 1.5
-                });
+            if (location && tracking) {
+                const hasMovedSignificantly = !prevLoc.current ||
+                    Math.abs(location.lat - prevLoc.current.lat) > 0.0002 ||
+                    Math.abs(location.lng - prevLoc.current.lng) > 0.0002;
+
+                if (hasMovedSignificantly) {
+                    map.flyTo([location.lat, location.lng], ZOOM_LEVEL, {
+                        animate: true,
+                        duration: 1.5
+                    });
+                    prevLoc.current = location;
+                }
             }
-        }, [location, map]);
+        }, [location?.lat, location?.lng, map, tracking, ZOOM_LEVEL]);
 
         return null;
     }
 
+    const [tracking, setTracking] = useState(true);
+
     return (
-        <div className="h-[600px] w-full rounded-xl overflow-hidden shadow-inner border border-neutral-200">
+        <div className="h-full w-full overflow-hidden shadow-inner">
             <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }}>
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -122,10 +118,34 @@ export default function SafetyMap({ incidents, userLocation, nearbyUsers = [], o
                     </Marker>
                 )}
 
-                {/* Nearby Users using simple markers for now as custom icons can be tricky */}
+                {/* Nearby Users */}
                 {nearbyUsers.map((u) => (
-                    <Marker key={`user-${u.id}`} position={[u.lat, u.lng]} icon={nearbyIcon}>
-                        <Popup>Nearby User</Popup>
+                    <Marker
+                        key={`user-${u.id}`}
+                        position={[u.lat, u.lng]}
+                        icon={u.isHelpRequested ? helpRequestedIcon : nearbyIcon}
+                        zIndexOffset={u.isHelpRequested ? 1000 : 0}
+                    >
+                        <Popup>
+                            {u.isHelpRequested ? (
+                                <div className="text-center">
+                                    <div className="font-bold text-red-600 mb-2">HELP REQUESTED!</div>
+                                    {onOfferHelp && (
+                                        <button
+                                            onClick={() => {
+                                                console.log("Offer Help Clicked for:", u.id);
+                                                onOfferHelp(u.id);
+                                            }}
+                                            className="px-3 py-1 bg-blue-600 text-white text-xs font-bold rounded-full hover:bg-blue-700 shadow-sm"
+                                        >
+                                            Offer Help
+                                        </button>
+                                    )}
+                                </div>
+                            ) : (
+                                <div>Nearby User</div>
+                            )}
+                        </Popup>
                     </Marker>
                 ))}
 
@@ -157,6 +177,18 @@ export default function SafetyMap({ incidents, userLocation, nearbyUsers = [], o
                 ))}
 
             </MapContainer>
+
+            {/* Recenter Button */}
+            {!tracking && userLocation && (
+                <button
+                    onClick={() => setTracking(true)}
+                    className="absolute bottom-24 right-6 bg-white p-3 rounded-full shadow-lg z-[400] text-blue-600 border border-neutral-200 hover:bg-blue-50 transition-colors"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="16 12 12 8 8 12"></polyline><line x1="12" y1="16" x2="12" y2="8"></line></svg>
+                    <span className="sr-only">Recenter</span>
+                </button>
+            )}
         </div>
     );
 }
+

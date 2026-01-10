@@ -4,10 +4,10 @@ import { hashPassword, signToken, setSession } from '@/lib/auth';
 
 export async function POST(request: Request) {
     try {
-        const { email, password, name } = await request.json();
+        const { name, email, password, phoneNumber, emergencyContactName, emergencyContactNumber } = await request.json();
 
-        if (!email || !password) {
-            return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+        if (!email || !password || !phoneNumber || !emergencyContactName || !emergencyContactNumber) {
+            return NextResponse.json({ error: 'All fields including emergency contacts are required for your safety.' }, { status: 400 });
         }
 
         const existingUser = await prisma.user.findUnique({ where: { email } });
@@ -18,9 +18,12 @@ export async function POST(request: Request) {
         const hashedPassword = await hashPassword(password);
         const user = await prisma.user.create({
             data: {
+                name,
                 email,
                 password: hashedPassword,
-                name
+                phoneNumber,
+                emergencyContactName,
+                emergencyContactNumber
             }
         });
 

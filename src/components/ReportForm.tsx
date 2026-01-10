@@ -9,18 +9,41 @@ export default function ReportForm({ selectedLocation, onSuccess, onCancel }: {
 }) {
     const [loading, setLoading] = useState(false);
 
+    // Helper to get local time in ISO format for datetime-local input (YYYY-MM-DDTHH:mm)
+    const getLocalISOString = () => {
+        const now = new Date();
+        now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+        return now.toISOString().slice(0, 16);
+    };
+
     async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         if (!selectedLocation) return;
 
         setLoading(true);
         const formData = new FormData(e.currentTarget);
+
+        // Convert local datetime input to UTC ISO string
+        const localTime = formData.get('timestamp') as string;
+
+        // Validation: Future Date Check
+        if (localTime) {
+            const selectedDate = new Date(localTime);
+            if (selectedDate > new Date()) {
+                alert("Time of incident cannot be in the future.");
+                setLoading(false);
+                return;
+            }
+        }
+
+        const isoTimestamp = localTime ? new Date(localTime).toISOString() : new Date().toISOString();
+
         const data = {
             lat: selectedLocation.lat,
             lng: selectedLocation.lng,
             category: formData.get('category'),
             description: formData.get('description'),
-            timestamp: formData.get('timestamp') || new Date().toISOString(),
+            timestamp: isoTimestamp,
         };
 
         try {
@@ -67,7 +90,8 @@ export default function ReportForm({ selectedLocation, onSuccess, onCancel }: {
                     type="datetime-local"
                     name="timestamp"
                     required
-                    defaultValue={new Date().toISOString().slice(0, 16)}
+                    defaultValue={getLocalISOString()}
+                    max={getLocalISOString()}
                     className="w-full p-2.5 bg-white border border-neutral-300 rounded-lg text-sm text-neutral-800 transition focus:ring-2 focus:ring-primary focus:border-primary outline-none"
                 />
             </div>

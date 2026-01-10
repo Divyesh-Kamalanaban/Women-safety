@@ -8,6 +8,9 @@ export default function RegisterPage() {
     const [name, setName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [phoneNumber, setPhoneNumber] = useState('');
+    const [emergencyName, setEmergencyName] = useState('');
+    const [emergencyNumber, setEmergencyNumber] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     const router = useRouter();
@@ -17,11 +20,36 @@ export default function RegisterPage() {
         setLoading(true);
         setError('');
 
+        if (!/^\+?[1-9]\d{1,14}$/.test(phoneNumber)) {
+            setError('Please enter a valid phone number (e.g., +919876543210)');
+            setLoading(false);
+            return;
+        }
+
+        if (!emergencyName || !emergencyNumber) {
+            setError('Emergency contact details are mandatory for your safety.');
+            setLoading(false);
+            return;
+        }
+
+        if (!/^\+?[1-9]\d{1,14}$/.test(emergencyNumber)) {
+            setError('Please enter a valid emergency contact number.');
+            setLoading(false);
+            return;
+        }
+
         try {
             const res = await fetch('/api/auth/register', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ name, email, password }),
+                body: JSON.stringify({
+                    name,
+                    email,
+                    password,
+                    phoneNumber,
+                    emergencyContactName: emergencyName,
+                    emergencyContactNumber: emergencyNumber
+                }),
             });
 
             if (res.ok) {
@@ -90,6 +118,45 @@ export default function RegisterPage() {
                             placeholder="At least 6 characters"
                             minLength={6}
                         />
+                    </div>
+
+                    <div className="pt-4 border-t border-neutral-100">
+                        <h3 className="text-sm font-bold text-neutral-900 mb-3 text-red-600">Emergency Contact (Required)</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-sm font-semibold text-neutral-700 mb-1">Your Phone Number</label>
+                                <input
+                                    type="tel"
+                                    required
+                                    value={phoneNumber}
+                                    onChange={(e) => setPhoneNumber(e.target.value)}
+                                    className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition"
+                                    placeholder="+91 98765 43210"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-neutral-700 mb-1">Emergency Contact Name</label>
+                                <input
+                                    type="text"
+                                    required
+                                    value={emergencyName}
+                                    onChange={(e) => setEmergencyName(e.target.value)}
+                                    className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition"
+                                    placeholder="Parent / Guardian Name"
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-semibold text-neutral-700 mb-1">Emergency Contact Number</label>
+                                <input
+                                    type="tel"
+                                    required
+                                    value={emergencyNumber}
+                                    onChange={(e) => setEmergencyNumber(e.target.value)}
+                                    className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition"
+                                    placeholder="Emergency Number"
+                                />
+                            </div>
+                        </div>
                     </div>
 
                     <button
