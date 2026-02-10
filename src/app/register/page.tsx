@@ -20,20 +20,38 @@ export default function RegisterPage() {
         setLoading(true);
         setError('');
 
-        if (!/^\+?[1-9]\d{1,14}$/.test(phoneNumber)) {
-            setError('Please enter a valid phone number (e.g., +919876543210)');
+        // 1. Password Strength
+        if (password.length < 8) {
+            setError('Password must be at least 8 characters long.');
             setLoading(false);
             return;
         }
 
+        // 2. Phone Validation (Indian Format Preferred)
+        // Allows +91 or just 10 digits starting with 6-9
+        const phoneRegex = /^(\+91[\-\s]?)?[6789]\d{9}$/;
+        if (!phoneRegex.test(phoneNumber)) {
+            setError('Please enter a valid Indian mobile number (e.g., +91 9876543210).');
+            setLoading(false);
+            return;
+        }
+
+        // 3. Emergency Contact Validation
         if (!emergencyName || !emergencyNumber) {
-            setError('Emergency contact details are mandatory for your safety.');
+            setError('Emergency contact details are mandatory.');
             setLoading(false);
             return;
         }
 
-        if (!/^\+?[1-9]\d{1,14}$/.test(emergencyNumber)) {
-            setError('Please enter a valid emergency contact number.');
+        if (!phoneRegex.test(emergencyNumber)) {
+            setError('Please enter a valid emergency contact number (Indian format).');
+            setLoading(false);
+            return;
+        }
+
+        // 4. Circular Reference Check
+        if (phoneNumber === emergencyNumber) {
+            setError('You cannot be your own emergency contact. Please provide a different number.');
             setLoading(false);
             return;
         }
@@ -54,7 +72,7 @@ export default function RegisterPage() {
 
             if (res.ok) {
                 localStorage.removeItem('safety_user_id'); // Clear guest session
-                router.push('/');
+                router.push('/dashboard');
                 router.refresh();
             } else {
                 const data = await res.json();
@@ -73,13 +91,13 @@ export default function RegisterPage() {
                 <div className="text-center mb-8">
                     <h1 className="text-2xl font-bold text-neutral-900 flex items-center justify-center gap-2">
                         <span className="w-3 h-3 bg-secondary rounded-full"></span>
-                        SafeCity Join
+                        Sororine Join
                     </h1>
                     <p className="text-sm text-neutral-500 mt-2">Create an account to contribute safely</p>
                 </div>
 
                 {error && (
-                    <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100">
+                    <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 animate-in fade-in slide-in-from-top-2">
                         {error}
                     </div>
                 )}
@@ -92,8 +110,8 @@ export default function RegisterPage() {
                             required
                             value={name}
                             onChange={(e) => setName(e.target.value)}
-                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition"
-                            placeholder="Jane Doe"
+                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition placeholder:text-neutral-400"
+                            placeholder="e.g. Aditi Sharma"
                         />
                     </div>
                     <div>
@@ -103,8 +121,8 @@ export default function RegisterPage() {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition"
-                            placeholder="you@example.com"
+                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition placeholder:text-neutral-400"
+                            placeholder="e.g. aditi@example.com"
                         />
                     </div>
                     <div>
@@ -114,14 +132,17 @@ export default function RegisterPage() {
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition"
-                            placeholder="At least 6 characters"
-                            minLength={6}
+                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition placeholder:text-neutral-400"
+                            placeholder="Min. 8 characters"
+                            minLength={8}
                         />
                     </div>
 
                     <div className="pt-4 border-t border-neutral-100">
-                        <h3 className="text-sm font-bold text-neutral-900 mb-3 text-red-600">Emergency Contact (Required)</h3>
+                        <h3 className="text-sm font-bold text-neutral-900 mb-3 text-red-600 flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-red-500"></span>
+                            Emergency Contact (Required)
+                        </h3>
                         <div className="space-y-4">
                             <div>
                                 <label className="block text-sm font-semibold text-neutral-700 mb-1">Your Phone Number</label>
@@ -130,9 +151,10 @@ export default function RegisterPage() {
                                     required
                                     value={phoneNumber}
                                     onChange={(e) => setPhoneNumber(e.target.value)}
-                                    className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition"
+                                    className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition placeholder:text-neutral-400"
                                     placeholder="+91 98765 43210"
                                 />
+                                <p className="text-xs text-neutral-400 mt-1">We verify this for safety alerts.</p>
                             </div>
                             <div>
                                 <label className="block text-sm font-semibold text-neutral-700 mb-1">Emergency Contact Name</label>
@@ -141,8 +163,8 @@ export default function RegisterPage() {
                                     required
                                     value={emergencyName}
                                     onChange={(e) => setEmergencyName(e.target.value)}
-                                    className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition"
-                                    placeholder="Parent / Guardian Name"
+                                    className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition placeholder:text-neutral-400"
+                                    placeholder="e.g. Papa / Mom / Brother"
                                 />
                             </div>
                             <div>
@@ -152,9 +174,10 @@ export default function RegisterPage() {
                                     required
                                     value={emergencyNumber}
                                     onChange={(e) => setEmergencyNumber(e.target.value)}
-                                    className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition"
-                                    placeholder="Emergency Number"
+                                    className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-secondary focus:border-secondary outline-none transition placeholder:text-neutral-400"
+                                    placeholder="+91 98765 43210"
                                 />
+                                <p className="text-xs text-neutral-400 mt-1">Cannot be your own number.</p>
                             </div>
                         </div>
                     </div>
@@ -172,7 +195,7 @@ export default function RegisterPage() {
                     Already have an account? <Link href="/login" className="text-secondary font-semibold hover:underline">Sign in</Link>
                 </div>
                 <div className="mt-2 text-center text-sm">
-                    <Link href="/" className="text-neutral-400 hover:text-neutral-600">Back to Dashboard</Link>
+                    <Link href="/" className="text-neutral-400 hover:text-neutral-600">Back to Home</Link>
                 </div>
             </div>
         </div>

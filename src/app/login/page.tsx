@@ -26,7 +26,7 @@ export default function LoginPage() {
             if (res.ok) {
                 // Clear guest session
                 localStorage.removeItem('safety_user_id');
-                router.push('/');
+                router.push('/dashboard');
                 router.refresh(); // Refresh to update auth state in root layout/dashboard
             } else {
                 const data = await res.json();
@@ -45,7 +45,7 @@ export default function LoginPage() {
                 <div className="text-center mb-8">
                     <h1 className="text-2xl font-bold text-neutral-900 flex items-center justify-center gap-2">
                         <span className="w-3 h-3 bg-primary rounded-full"></span>
-                        SafeCity Login
+                        Sororine Login
                     </h1>
                     <p className="text-sm text-neutral-500 mt-2">Sign in to access personalized safety features</p>
                 </div>
@@ -64,8 +64,8 @@ export default function LoginPage() {
                             required
                             value={email}
                             onChange={(e) => setEmail(e.target.value)}
-                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
-                            placeholder="you@example.com"
+                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition placeholder:text-neutral-400"
+                            placeholder="e.g. aditi@example.com"
                         />
                     </div>
                     <div>
@@ -75,8 +75,8 @@ export default function LoginPage() {
                             required
                             value={password}
                             onChange={(e) => setPassword(e.target.value)}
-                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition"
-                            placeholder="••••••••"
+                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition placeholder:text-neutral-400"
+                            placeholder="Enter your password"
                         />
                     </div>
 
@@ -93,7 +93,7 @@ export default function LoginPage() {
                     Don't have an account? <Link href="/register" className="text-primary font-semibold hover:underline">Sign up</Link>
                 </div>
                 <div className="mt-2 text-center text-sm">
-                    <Link href="/" className="text-neutral-400 hover:text-neutral-600">Back to Dashboard</Link>
+                    <Link href="/" className="text-neutral-400 hover:text-neutral-600">Back to Home</Link>
                 </div>
             </div>
         </div>

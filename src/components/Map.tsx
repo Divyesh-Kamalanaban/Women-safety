@@ -101,7 +101,14 @@ export default function SafetyMap({ incidents, userLocation, nearbyUsers = [], o
 
     return (
         <div className="h-full w-full overflow-hidden shadow-inner">
-            <MapContainer center={position} zoom={13} style={{ height: '100%', width: '100%' }}>
+            <MapContainer
+                center={position}
+                zoom={5}
+                minZoom={4}
+                maxBounds={[[6.0, 68.0], [37.0, 97.0]]} // Approximate bounds of India
+                maxBoundsViscosity={1.0}
+                style={{ height: '100%', width: '100%' }}
+            >
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
                     url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
