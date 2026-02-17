@@ -64,6 +64,15 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 > **Note**: The application requires **Location Permissions**. You must allow location access to view the dashboard. If you deny it, the application will not load the safety data.
 
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  experimental: {
+    allowedDevOrigins: ["192.168.29.100:3000", "localhost:3000"]
+  }
+};
+
+export default nextConfig;
+
 ## Project Structure
 - `src/app/api`: Backend API routes (Risk analysis, Incidents, Auth).
 - `src/components`: Reusable UI components (MapWrapper, ReportForm).

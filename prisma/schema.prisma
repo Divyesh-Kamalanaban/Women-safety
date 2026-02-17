@@ -30,6 +30,8 @@ model Incident {
   lng         Float
   category    String
   description String?
+  location    String?  // Street name or address
+  imageUrl    String?  // Base64 or URL
   timestamp   DateTime
   createdAt   DateTime @default(now())
   

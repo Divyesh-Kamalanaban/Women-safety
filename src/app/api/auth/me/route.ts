@@ -17,7 +17,13 @@ export async function GET() {
             phoneNumber: true,
             emergencyContactName: true,
             emergencyContactNumber: true,
-            isPhoneVerified: true
+            isPhoneVerified: true,
+            location: {
+                select: {
+                    lat: true,
+                    lng: true
+                }
+            }
         }
     });
 
