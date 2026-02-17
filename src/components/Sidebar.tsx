@@ -18,7 +18,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const navItems = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/" },
+    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
     { icon: ShieldAlert, label: "Reports", href: "/reports" },
     { icon: HistoryIcon, label: "History", href: "/history" },
     { icon: Settings, label: "Settings", href: "/settings" },

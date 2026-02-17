@@ -25,15 +25,10 @@ export default function LoginPage() {
             });
 
             if (res.ok) {
-<<<<<<< HEAD
-                router.push('/');
-                router.refresh();
-=======
                 // Clear guest session
                 localStorage.removeItem('safety_user_id');
                 router.push('/dashboard');
                 router.refresh(); // Refresh to update auth state in root layout/dashboard
->>>>>>> 97bf6a1f067a8d455a4e98836353c862f0697872
             } else {
                 const data = await res.json();
                 setError(data.error || 'Login failed');
@@ -55,19 +50,11 @@ export default function LoginPage() {
 
             <div className="w-full max-w-md relative z-10 animate-in fade-in zoom-in duration-500">
                 <div className="text-center mb-8">
-<<<<<<< HEAD
                     <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-white/5 border border-white/10 mb-6 shadow-2xl shadow-primary/20">
                         <ShieldAlert size={32} className="text-primary" />
                     </div>
                     <h1 className="text-3xl font-bold text-white mb-2 tracking-tight">Welcome Back</h1>
                     <p className="text-gray-400">Sign in to report and view incidents based on your location.</p>
-=======
-                    <h1 className="text-2xl font-bold text-neutral-900 flex items-center justify-center gap-2">
-                        <span className="w-3 h-3 bg-primary rounded-full"></span>
-                        Sororine Login
-                    </h1>
-                    <p className="text-sm text-neutral-500 mt-2">Sign in to access personalized safety features</p>
->>>>>>> 97bf6a1f067a8d455a4e98836353c862f0697872
                 </div>
 
                 <div className="glass-card p-8 rounded-2xl border border-white/10 shadow-xl backdrop-blur-xl bg-black/40">
@@ -78,7 +65,6 @@ export default function LoginPage() {
                             </div>
                         )}
 
-<<<<<<< HEAD
                         <div className="space-y-4">
                             <div className="relative group">
                                 <Mail className="absolute left-3 top-3.5 text-gray-500 group-focus-within:text-primary transition-colors" size={20} />
@@ -91,31 +77,6 @@ export default function LoginPage() {
                                     required
                                 />
                             </div>
-=======
-                <form onSubmit={handleLogin} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-semibold text-neutral-700 mb-1">Email</label>
-                        <input
-                            type="email"
-                            required
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition placeholder:text-neutral-400"
-                            placeholder="e.g. aditi@example.com"
-                        />
-                    </div>
-                    <div>
-                        <label className="block text-sm font-semibold text-neutral-700 mb-1">Password</label>
-                        <input
-                            type="password"
-                            required
-                            value={password}
-                            onChange={(e) => setPassword(e.target.value)}
-                            className="w-full p-3 bg-white border border-neutral-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary outline-none transition placeholder:text-neutral-400"
-                            placeholder="Enter your password"
-                        />
-                    </div>
->>>>>>> 97bf6a1f067a8d455a4e98836353c862f0697872
 
                             <div className="relative group">
                                 <Lock className="absolute left-3 top-3.5 text-gray-500 group-focus-within:text-primary transition-colors" size={20} />
@@ -154,16 +115,10 @@ export default function LoginPage() {
                         </p>
                     </div>
                 </div>
-<<<<<<< HEAD
-
                 <div className="mt-8 text-center">
                     <Link href="/" className="text-gray-500 hover:text-white text-sm transition-colors flex items-center justify-center gap-2">
                         ← Back to Map
                     </Link>
-=======
-                <div className="mt-2 text-center text-sm">
-                    <Link href="/" className="text-neutral-400 hover:text-neutral-600">Back to Home</Link>
->>>>>>> 97bf6a1f067a8d455a4e98836353c862f0697872
                 </div>
             </div>
         </div>
