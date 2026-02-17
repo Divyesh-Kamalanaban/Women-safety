@@ -124,15 +124,25 @@ export default function SafetyMap({ incidents, userLocation, nearbyUsers = [], o
     };
 
     return (
+<<<<<<< HEAD
         <div className="h-full w-full overflow-hidden bg-[#050509] relative">
+=======
+        <div className="h-full w-full overflow-hidden shadow-inner">
+>>>>>>> 97bf6a1f067a8d455a4e98836353c862f0697872
             <MapContainer
                 center={position}
                 zoom={5}
                 minZoom={4}
+<<<<<<< HEAD
                 maxBounds={[[6.0, 68.0], [37.0, 97.0]]}
                 maxBoundsViscosity={1.0}
                 style={{ height: '100%', width: '100%', background: '#050509' }}
                 zoomControl={false} // Disable default
+=======
+                maxBounds={[[6.0, 68.0], [37.0, 97.0]]} // Approximate bounds of India
+                maxBoundsViscosity={1.0}
+                style={{ height: '100%', width: '100%' }}
+>>>>>>> 97bf6a1f067a8d455a4e98836353c862f0697872
             >
                 <TileLayer
                     attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
