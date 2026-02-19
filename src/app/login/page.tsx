@@ -1,16 +1,25 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ShieldAlert, LogIn, Lock, Mail, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
     const router = useRouter();
+    const searchParams = useSearchParams();
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [redirectPath, setRedirectPath] = useState('/dashboard');
+
+    useEffect(() => {
+        const redirect = searchParams.get('redirect');
+        if (redirect) {
+            setRedirectPath(redirect);
+        }
+    }, [searchParams]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,7 +36,7 @@ export default function LoginPage() {
             if (res.ok) {
                 // Clear guest session
                 localStorage.removeItem('safety_user_id');
-                router.push('/dashboard');
+                router.push(redirectPath);
                 router.refresh(); // Refresh to update auth state in root layout/dashboard
             } else {
                 const data = await res.json();
@@ -114,10 +123,35 @@ export default function LoginPage() {
                             </Link>
                         </p>
                     </div>
+
+                    {/* Demo Info Box */}
+                    <div className="mt-8 pt-6 border-t border-gray-700">
+                        <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
+                            <p className="text-xs text-blue-300 font-semibold mb-3 uppercase tracking-wide">Demo Credentials</p>
+                            <div className="space-y-2 text-xs text-gray-400 font-mono mb-4">
+                                <div className="flex justify-between items-center">
+                                    <span>alice@example.com</span>
+                                    <span className="text-gray-600">/</span>
+                                    <span>password123</span>
+                                </div>
+                                <div className="flex justify-between items-center">
+                                    <span>priya@example.com</span>
+                                    <span className="text-gray-600">/</span>
+                                    <span>password123</span>
+                                </div>
+                            </div>
+                            <Link 
+                                href="/demo" 
+                                className="text-xs text-blue-400 hover:text-blue-300 transition-colors underline"
+                            >
+                                Need to create test users? Visit demo page →
+                            </Link>
+                        </div>
+                    </div>
                 </div>
                 <div className="mt-8 text-center">
                     <Link href="/" className="text-gray-500 hover:text-white text-sm transition-colors flex items-center justify-center gap-2">
-                        ← Back to Map
+                        ← Back to Home
                     </Link>
                 </div>
             </div>

@@ -7,8 +7,11 @@ import KPICard from '@/components/KPICard';
 import AnalyticsWidget from '@/components/AnalyticsWidget';
 import MapSearch from '@/components/MapSearch';
 import Chat from '@/components/Chat';
-import { ShieldAlert, Users, Activity, MapPin, HandHelping } from 'lucide-react';
+import HelpModal from '@/components/HelpModal';
+import OfferHelpModal from '@/components/OfferHelpModal';
+import { ShieldAlert, Users, Activity, MapPin, HandHelping, Heart } from 'lucide-react';
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import ReportIncidentModal from '@/components/ReportIncidentModal';
 import IncidentDetailsModal from '@/components/IncidentDetailsModal';
 
@@ -19,6 +22,7 @@ const SafetyMap = dynamic(() => import('@/components/Map'), {
 });
 
 export default function Dashboard() {
+  const router = useRouter();
   const [incidents, setIncidents] = useState<any[]>([]);
   const [currentRisk, setCurrentRisk] = useState<any>(null);
   const [analyticsData, setAnalyticsData] = useState<any[]>([]);
@@ -32,14 +36,42 @@ export default function Dashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isReportModalOpen, setIsReportModalOpen] = useState(false);
   const [selectedIncident, setSelectedIncident] = useState<any>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
   // Help System State
   const [isHelpActive, setIsHelpActive] = useState(false);
   const [acceptedHelperId, setAcceptedHelperId] = useState<string | null>(null);
   const [activeChatPartner, setActiveChatPartner] = useState<{ id: string, name: string } | null>(null);
+  const [isHelpModalOpen, setIsHelpModalOpen] = useState(false);
+  const [isOfferHelpModalOpen, setIsOfferHelpModalOpen] = useState(false);
+  const [pendingOffers, setPendingOffers] = useState<any[]>([]);
 
-  // 1. Get User Location & Identity on Mount
+  // 1. Check Authentication on Mount
   useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const res = await fetch('/api/auth/me');
+        if (!res.ok) {
+          // Not authenticated
+          setIsAuthenticated(false);
+          router.push('/login');
+          return;
+        }
+        setIsAuthenticated(true);
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        setIsAuthenticated(false);
+        router.push('/login');
+      }
+    };
+
+    checkAuth();
+  }, [router]);
+
+  // 2. Get User Location & Identity on Mount
+  useEffect(() => {
+    if (!isAuthenticated) return;
+
     // Check for existing session ID or generate one
     let storedId = localStorage.getItem('sororine_user_id');
     if (!storedId) {
@@ -121,25 +153,36 @@ export default function Dashboard() {
         }
 
         // D. Help Status (Offers & My Request)
-        // Check if I have help requested
         const myHelpRes = await fetch(`/api/users/help?id=${userId}`);
         if (myHelpRes.ok) {
           const data = await myHelpRes.json();
           setIsHelpActive(data.active);
         }
 
-        // If I requested help, check for accepted offers to start chat
+        // E. If Help is Active, Check for Accepted Offers
         if (isHelpActive) {
-          // In a real app we'd poll for 'ACCEPTED' offers. 
-          // For now, let's assume if we are active, we look for offers.
-          // We can re-use the nearby users logic or a specific endpoint.
-          // Simplified: If I have an accepted offer, set chat partner.
-          // (This part requires a specific 'my-offers' endpoint or extending existing ones.
-          //  For now, we'll demonstrate the "Offer Help" flow more fully).
+          const offersRes = await fetch(`/api/users/help/offer?requesterId=${userId}`);
+          if (offersRes.ok) {
+            const data = await offersRes.json();
+            const acceptedOffers = data.offers.filter((o: any) => o.status === 'ACCEPTED');
+            
+            if (acceptedOffers.length > 0 && !activeChatPartner) {
+              const helper = acceptedOffers[0].helper;
+              setAcceptedHelperId(acceptedOffers[0].helperId);
+              setActiveChatPartner({
+                id: acceptedOffers[0].helperId,
+                name: `Helper #${acceptedOffers[0].helperId.slice(0, 8)}`
+              });
+            }
+          }
         }
 
-        // Check if *I* have offered help and it was accepted
-        // (This would be another poll. For simplicity, we'll trust the flow)
+        // F. If User is Potentially a Helper, Get Their Pending Offers (to help others)
+        const myOffersRes = await fetch(`/api/users/help/my-offers?id=${userId}`);
+        if (myOffersRes.ok) {
+          const data = await myOffersRes.json();
+          setPendingOffers(data.offers || []);
+        }
       }
 
     } catch (error) {
@@ -147,7 +190,7 @@ export default function Dashboard() {
     } finally {
       setIsLoading(false);
     }
-  }, [userLocation, userId, isHelpActive]);
+  }, [userLocation, userId, isHelpActive, activeChatPartner]);
 
   useEffect(() => {
     fetchData();
@@ -172,6 +215,10 @@ export default function Dashboard() {
       if (!newStatus) {
         // Reset chat if help ended
         setActiveChatPartner(null);
+        setAcceptedHelperId(null);
+      } else {
+        // Open help modal when help is requested
+        setIsHelpModalOpen(true);
       }
     } catch (e) {
       console.error("Failed to toggle help", e);
@@ -182,7 +229,6 @@ export default function Dashboard() {
   const handleOfferHelp = async (targetUserId: string) => {
     if (!userId) return;
     try {
-      // Send Offer
       const res = await fetch('/api/users/help/offer', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -194,24 +240,49 @@ export default function Dashboard() {
       });
 
       if (res.ok) {
-        alert("Help offer sent! Waiting for them to accept...");
-        // In a real app, we would wait for a "notification" or poll for acceptance state.
-        // Simulating acceptance for demo if needed, or just waiting.
-        // For now, we will open chat optimistically or wait for the other user (if we could act as them).
-        // Since we are one user, we can't easily "accept" our own offer to another dummy user.
-        // But if we use two browsers, this works.
-        // To enable Chat on the HELPER side, we need to know if status is ACCEPTED.
-        // We'll add a poller for that or just open chat for demo purposes?
-        // Let's stick to reality: Helper waits.
+        console.log("Help offer sent successfully");
+        return true;
+      } else {
+        const error = await res.json();
+        console.error("Failed to send help offer:", error.error);
+        return false;
       }
     } catch (e) {
-      console.error(e);
+      console.error("Error offering help:", e);
+      return false;
     }
   };
 
-  // This would be triggered if we detect our offer was accepted
-  // setActiveChatPartner({ id: targetUserId, name: "Person in Distress" });
+  const handleAcceptOffer = (offerId: string) => {
+    // The help modal will handle opening the chat
+    // This is called when an offer is accepted
+    console.log("Offer accepted:", offerId);
+    setIsHelpModalOpen(false);
+    fetchData(); // Refresh to get the accepted offer
+  };
 
+  const handleRejectOffer = (offerId: string) => {
+    console.log("Offer rejected:", offerId);
+    fetchData(); // Refresh the list
+  };
+
+
+  // Show loading state while checking authentication
+  if (isAuthenticated === null) {
+    return (
+      <div className="flex h-screen bg-[#050509] text-white items-center justify-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-10 h-10 rounded-full border-2 border-blue-600 border-t-transparent animate-spin"></div>
+          <p className="text-neutral-400">Verifying access...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If not authenticated, don't render (redirect is in progress)
+  if (!isAuthenticated) {
+    return null;
+  }
 
   return (
     <div className="flex h-screen bg-[#050509] text-white overflow-hidden">
@@ -309,6 +380,39 @@ export default function Dashboard() {
             <HandHelping size={24} />
             {isHelpActive ? "CANCEL HELP REQUEST" : "REQUEST HELP"}
           </button>
+
+          {/* Offer Help Button (for helpers) */}
+          {!isHelpActive && nearbyUsers.some(u => u.isHelpRequested) && (
+            <button
+              onClick={() => setIsOfferHelpModalOpen(true)}
+              className="absolute bottom-24 right-6 z-50 px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white rounded-full shadow-2xl font-bold flex items-center gap-2 transition-all animate-pulse shadow-green-600/50"
+            >
+              <Heart size={20} />
+              Help Someone
+            </button>
+          )}
+
+          {/* Help Modal */}
+          {userId && (
+            <HelpModal
+              userId={userId}
+              isOpen={isHelpModalOpen}
+              onClose={() => setIsHelpModalOpen(false)}
+              onAcceptOffer={handleAcceptOffer}
+              onRejectOffer={handleRejectOffer}
+            />
+          )}
+
+          {/* Offer Help Modal */}
+          {userId && (
+            <OfferHelpModal
+              userId={userId}
+              isOpen={isOfferHelpModalOpen}
+              onClose={() => setIsOfferHelpModalOpen(false)}
+              nearbyUsers={nearbyUsers}
+              onOfferHelp={handleOfferHelp}
+            />
+          )}
 
           {/* Report Button (Secondary) */}
           <button
